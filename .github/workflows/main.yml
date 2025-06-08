@@ -23,15 +23,14 @@ jobs:
         run: |
           sed -i '' '/cp .*Daemon/d' Installer.xcodeproj/project.pbxproj
 
-      # Эта часть уже не нужна, если не нужен Daemon!
-      # - name: Ensure Daemon binary exists
-      #   run: |
-      #     if [ ! -f Installer/Daemon ]; then
-      #       echo "ERROR: Daemon binary not found in Installer/Daemon"
-      #       exit 1
-      #     fi
-      #     chmod +x Installer/Daemon
-      #     file Installer/Daemon
+      - name: Ensure Daemon binary exists
+        run: |
+          if [ ! -f Installer/Daemon ]; then
+            echo "ERROR: Daemon binary not found in Installer/Daemon"
+            exit 1
+          fi
+          chmod +x Installer/Daemon
+          file Installer/Daemon
 
       - name: Build Installer (skip Daemon)
         run: |
@@ -40,9 +39,14 @@ jobs:
             -configuration Release \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
+      - name: List build products
+        run: |
+          find . -type d -name "*.app" || true
+
       - name: Upload Installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: InstallerBuild
           path: |
-            Build/Products/Release/RansomWhere_Installer.app
+            build/Release/RansomWhere_Installer.app
+            Installer/build/Release/RansomWhere_Installer.app
