@@ -23,14 +23,15 @@ jobs:
         run: |
           sed -i '' '/cp .*Daemon/d' Installer.xcodeproj/project.pbxproj
 
-      - name: Ensure Daemon binary exists
-        run: |
-          if [ ! -f Installer/Daemon ]; then
-            echo "ERROR: Daemon binary not found in Installer/Daemon"
-            exit 1
-          fi
-          chmod +x Installer/Daemon
-          file Installer/Daemon
+      # Эта часть уже не нужна, если не нужен Daemon!
+      # - name: Ensure Daemon binary exists
+      #   run: |
+      #     if [ ! -f Installer/Daemon ]; then
+      #       echo "ERROR: Daemon binary not found in Installer/Daemon"
+      #       exit 1
+      #     fi
+      #     chmod +x Installer/Daemon
+      #     file Installer/Daemon
 
       - name: Build Installer (skip Daemon)
         run: |
@@ -44,5 +45,4 @@ jobs:
         with:
           name: InstallerBuild
           path: |
-            Installer/Daemon
-            Installer/build/Release/*
+            Build/Products/Release/RansomWhere_Installer.app
