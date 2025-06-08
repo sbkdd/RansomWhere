@@ -39,6 +39,15 @@ jobs:
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
             | tee xcodebuild.log
 
+      - name: List Installer/build folder (after build)
+        run: |
+          echo "===== Installer/build (Release) ====="
+          ls -lR $PWD/Installer/build || echo "Installer/build not found"
+          echo "===== build/Release ====="
+          ls -lR $PWD/build/Release || echo "build/Release not found"
+          echo "===== DerivedData (filtered for .app) ====="
+          find $HOME/Library/Developer/Xcode/DerivedData -type d -name "*.app" || echo "No .app in DerivedData"
+
       - name: Find all .app after build
         run: |
           echo "::group::.app search"
@@ -52,6 +61,8 @@ jobs:
           path: |
             **/RansomWhere_Installer.app
 
-      - name: List build products after build
-        run: |
-            ls -lR $PWD/Installer/build
+      - name: Upload xcodebuild.log (debug)
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
