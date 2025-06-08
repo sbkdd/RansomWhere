@@ -7,38 +7,41 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-13
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Daemon
+      - name: Build Daemon (skip signing)
         run: |
           xcodebuild -workspace RansomWhere.xcworkspace \
-            -scheme Daemon -configuration Release \
+            -scheme Daemon \
+            -configuration Release \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
       - name: Find Daemon binary
         id: find_daemon
         run: |
-          DAEMON_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon | grep -v dSYM | head -1)
-          echo "daemon_path=$DAEMON_PATH" >> $GITHUB_OUTPUT
-
-      - name: Copy Daemon to Installer
-        run: |
-          cp "${{ steps.find_daemon.outputs.daemon_path }}" Installer/Daemon
-          chmod +x Installer/Daemon
+          DAEMON_BIN=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print | grep -v dSYM | head -1)
+          if [ -z "$DAEMON_BIN" ]; then
+            echo "Daemon binary not found!"
+            exit 1
+          fi
+          echo "Found Daemon at $DAEMON_BIN"
+          mkdir -p Installer
+          cp "$DAEMON_BIN" Installer/Daemon
           ls -lh Installer/Daemon
           file Installer/Daemon
 
-      - name: Build Installer
+      - name: Build Installer (skip signing)
         run: |
           xcodebuild -workspace RansomWhere.xcworkspace \
-            -scheme Installer -configuration Release \
+            -scheme Installer \
+            -configuration Release \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      - name: Archive Installer
+      - name: Upload Daemon binary
         uses: actions/upload-artifact@v4
         with:
-          name: Installer
-          path: Installer/
+          name: Daemon
+          path: Installer/Daemon
