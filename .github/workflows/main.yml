@@ -13,7 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Проверяем, что бинарник на месте и исполняемый
       - name: Check Daemon binary exists
         run: |
           if [ ! -f Installer/Daemon ]; then
@@ -23,6 +22,11 @@ jobs:
           chmod +x Installer/Daemon
           ls -lh Installer/Daemon
           file Installer/Daemon
+
+      - name: Prepare Daemon binary for Xcode build
+        run: |
+          mkdir -p Build/Products/Release/
+          cp Installer/Daemon Build/Products/Release/Daemon
 
       - name: Build Installer (skip signing)
         run: |
