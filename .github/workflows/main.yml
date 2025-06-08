@@ -5,27 +5,33 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
+
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      - name: Install latest Git
-        run: brew install git || true
+    - name: Install latest Git
+      run: brew install git || true
 
-      - name: Install Carthage (если нужен)
-        run: brew install carthage || true
+    - name: Install Carthage (если нужен)
+      run: brew install carthage || true
 
-      - name: List available Xcode schemes
-        run: xcodebuild -list -workspace RansomWhere.xcworkspace
+    # Сборка Daemon (обязательно первым!)
+    - name: Build Daemon
+      run: |
+        xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release \
+          CODE_SIGN_IDENTITY= CODE_SIGNING_REQUIRED=NO CODE_SIGN_ENTITLEMENTS= CODE_SIGNING_ALLOWED=NO clean build
 
-      - name: Build with Xcode (Installer, без подписи)
-        run: |
-          xcodebuild -workspace RansomWhere.xcworkspace \
-          -scheme Installer \
-          -configuration Release \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGN_ENTITLEMENTS="" \
-          CODE_SIGNING_ALLOWED=NO \
-          clean build
+    # Сборка Installer
+    - name: Build Installer (без подписи)
+      run: |
+        xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release \
+          CODE_SIGN_IDENTITY= CODE_SIGNING_REQUIRED=NO CODE_SIGN_ENTITLEMENTS= CODE_SIGNING_ALLOWED=NO clean build
+
+    - name: Upload Installer artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: RansomWhere_Installer
+        path: |
+          ~/Library/Developer/Xcode/DerivedData/RansomWhere-*/Build/Products/Release/RansomWhere_Installer.app
