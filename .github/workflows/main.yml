@@ -19,7 +19,10 @@ jobs:
           sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 10.8;/MACOSX_DEPLOYMENT_TARGET = 10.13;/g' Installer.xcodeproj/project.pbxproj || true
           sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 10.8;/MACOSX_DEPLOYMENT_TARGET = 10.13;/g' Daemon.xcodeproj/project.pbxproj || true
 
-      # Проверяем что твой бинарник Daemon реально на месте
+      - name: Disable Daemon copy in Run Script
+        run: |
+          sed -i '' '/cp .*Daemon/d' Installer.xcodeproj/project.pbxproj
+
       - name: Ensure Daemon binary exists
         run: |
           if [ ! -f Installer/Daemon ]; then
@@ -29,7 +32,6 @@ jobs:
           chmod +x Installer/Daemon
           file Installer/Daemon
 
-      # Собираем только Installer, не Daemon
       - name: Build Installer (skip Daemon)
         run: |
           xcodebuild -workspace RansomWhere.xcworkspace \
@@ -37,7 +39,6 @@ jobs:
             -configuration Release \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      # (опционально) Пакуем релизные артефакты
       - name: Upload Installer artifact
         uses: actions/upload-artifact@v4
         with:
