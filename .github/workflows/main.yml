@@ -8,26 +8,30 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Build Daemon
-        run: xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release build
+        run: |
+          xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release \
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGN_ENTITLEMENTS="" CODE_SIGNING_ALLOWED=NO build
 
       - name: Build Installer
-        run: xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release build
+        run: |
+          xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release \
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGN_ENTITLEMENTS="" CODE_SIGNING_ALLOWED=NO build
 
       - name: Upload Daemon binary
         uses: actions/upload-artifact@v4
         with:
           name: Daemon
-          path: '**/Daemon'  # путь до бинаря, поправь если надо
+          path: '**/Daemon'  # поменяй путь если бинарь в другом месте
 
       - name: Upload Installer binary
         uses: actions/upload-artifact@v4
         with:
           name: Installer
-          path: '**/RansomWhere_Installer.app'  # путь до .app, поправь если надо
+          path: '**/Installer'  # поменяй путь если бинарь в другом месте
