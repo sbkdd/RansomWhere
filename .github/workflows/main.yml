@@ -39,14 +39,13 @@ jobs:
             -configuration Release \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      - name: List build products
-        run: |
-          find . -type d -name "*.app" || true
+      - name: List all built .app files
+        run: find . -type d -name "*.app"
 
       - name: Upload Installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: InstallerBuild
           path: |
-            build/Release/RansomWhere_Installer.app
-            Installer/build/Release/RansomWhere_Installer.app
+            **/RansomWhere_Installer.app
+            
