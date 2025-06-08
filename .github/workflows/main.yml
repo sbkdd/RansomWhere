@@ -22,15 +22,6 @@ jobs:
         run: |
           sed -i '' '/cp .*Daemon/d' Installer.xcodeproj/project.pbxproj
 
-      - name: Ensure Daemon binary exists
-        run: |
-          if [ ! -f Installer/Daemon ]; then
-            echo "ERROR: Daemon binary not found in Installer/Daemon"
-            exit 1
-          fi
-          chmod +x Installer/Daemon
-          file Installer/Daemon
-
       - name: Build Installer (skip Daemon)
         run: |
           xcodebuild -project Installer.xcodeproj \
@@ -39,32 +30,18 @@ jobs:
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
             | tee xcodebuild.log
 
-      - name: List all build directories
-        run: |
-          echo "=== Root $PWD ==="
-          ls -alh $PWD
-          echo "=== Installer/build ==="
-          ls -alh $PWD/Installer/build || true
-          echo "=== DerivedData ==="
-          ls -alh ~/Library/Developer/Xcode/DerivedData || true
-
       - name: Find all .app after build
         run: |
           echo "::group::.app search"
           find $PWD -type d -name "*.app"
           echo "::endgroup::"
-          find $PWD -type d -name "*.app" > app_paths.txt || true
-          cat app_paths.txt
 
-      - name: Upload any found .app as artifact
+      - name: Upload Installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: InstallerBuild
-          path: |
-            **/*.app
+          path: Installer/build/Release/RansomWhere_Installer.app
 
-      - name: Upload xcodebuild.log (debug)
-        uses: actions/upload-artifact@v4
-        with:
-          name: xcodebuild-log
-          path: xcodebuild.log
+      - name: List build products after build
+        run: |
+          ls -lR $PWD/Installer/build
