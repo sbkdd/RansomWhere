@@ -163,11 +163,19 @@ void signalHandler(int signal, siginfo_t *info, void *context)
     logMsg(LOG_ERR, [NSString stringWithFormat:@"OBJECTIVE-SEE ERROR: OS version: %@ /App version: %@", [[NSProcessInfo processInfo] operatingSystemVersionString], version]);
     
     //typecast context
-	uContext = (ucontext_t *)context;
+    uContext = (ucontext_t *)context;
+
+    // universal PC extraction (x86_64: __rip, arm64: __pc)
+    unsigned long *pc = NULL;
+    #if defined(__x86_64__)
+        pc = (unsigned long*)uContext->uc_mcontext->__ss.__rip;
+    #elif defined(__arm64__) || defined(__aarch64__)
+        pc = (unsigned long*)uContext->uc_mcontext->__ss.__pc;
+    #endif
 
     //create error msg
-    errorMessage = [NSString stringWithFormat:@"unhandled exception caught, si_signo: %d  /si_code: %s  /si_addr: %p /rip: %p",
-              info->si_signo, (info->si_code == SEGV_MAPERR) ? "SEGV_MAPERR" : "SEGV_ACCERR", info->si_addr, (unsigned long*)uContext->uc_mcontext->__ss.__rip];
+    errorMessage = [NSString stringWithFormat:@"unhandled exception caught, si_signo: %d  /si_code: %s  /si_addr: %p /pc: %p",
+              info->si_signo, (info->si_code == SEGV_MAPERR) ? "SEGV_MAPERR" : "SEGV_ACCERR", info->si_addr, pc];
     
     //err msg
     logMsg(LOG_ERR, [NSString stringWithFormat:@"OBJECTIVE-SEE ERROR: %@", errorMessage]);
@@ -191,7 +199,7 @@ void signalHandler(int signal, siginfo_t *info, void *context)
     errorInfo[KEY_ERROR_MSG] = @"ERROR: unrecoverable fault";
     
     //add sub msg
-    errorInfo[KEY_ERROR_SUB_MSG] = [NSString stringWithFormat:@"si_signo: %d / rip: %p", info->si_signo, (unsigned long*)uContext->uc_mcontext->__ss.__rip];
+    errorInfo[KEY_ERROR_SUB_MSG] = [NSString stringWithFormat:@"si_signo: %d / pc: %p", info->si_signo, pc];
     
     //set error URL
     errorInfo[KEY_ERROR_URL] = FATAL_ERROR_URL;
