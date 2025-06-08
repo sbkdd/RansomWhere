@@ -2,17 +2,15 @@ name: Build Installer (skip signing)
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Build Daemon
         run: |
@@ -20,22 +18,27 @@ jobs:
             -scheme Daemon -configuration Release \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      - name: Build Installer (skip signing)
+      - name: Build Installer
         run: |
           xcodebuild -workspace RansomWhere.xcworkspace \
             -scheme Installer -configuration Release \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-          # Найти бинарник Daemon (НЕ из dSYM)
-          DAEMON_BIN=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon | grep -v dSYM | head -1)
-          echo "Found Daemon binary at $DAEMON_BIN"
-          cp "$DAEMON_BIN" Installer/Daemon
+      - name: Find Daemon binary
+        id: find_daemon
+        run: |
+          DAEMON_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon | grep -v dSYM | head -1)
+          echo "daemon_path=$DAEMON_PATH" >> $GITHUB_OUTPUT
 
+      - name: Copy Daemon to Installer
+        run: |
+          cp "${{ steps.find_daemon.outputs.daemon_path }}" Installer/Daemon
+          chmod +x Installer/Daemon
           ls -lh Installer/Daemon
           file Installer/Daemon
 
       - name: Archive Installer
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Installer
           path: Installer/
