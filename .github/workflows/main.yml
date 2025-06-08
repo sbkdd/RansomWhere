@@ -1,7 +1,10 @@
 name: Build RansomWhere
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
@@ -11,36 +14,27 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Select Xcode 15.4
+      - name: Set up Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-      - name: Build Daemon (unsigned)
+      - name: Build Daemon
         run: |
-          xcodebuild \
-            -workspace RansomWhere.xcworkspace \
-            -scheme Daemon \
-            -configuration Release \
-            CODE_SIGN_IDENTITY= \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_ENTITLEMENTS= \
-            CODE_SIGNING_ALLOWED=NO \
-            clean build
+          xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release build
 
-      - name: Build Installer (unsigned)
+      - name: Build Installer
         run: |
-          xcodebuild \
-            -workspace RansomWhere.xcworkspace \
-            -scheme Installer \
-            -configuration Release \
-            CODE_SIGN_IDENTITY= \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_ENTITLEMENTS= \
-            CODE_SIGNING_ALLOWED=NO \
-            clean build
+          xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release build
 
-      - name: Upload Installer artifact
+      - name: Upload Daemon binary
         uses: actions/upload-artifact@v4
         with:
-          name: RansomWhere_Installer
+          name: Daemon
           path: |
-            ~/Library/Developer/Xcode/DerivedData/RansomWhere-*/Build/Products/Release/RansomWhere_Installer.app
+            ./Build/Products/Release/Daemon
+
+      - name: Upload Installer binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: Installer
+          path: |
+            ./Build/Products/Release/RansomWhere_Installer.app
