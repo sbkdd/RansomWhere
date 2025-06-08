@@ -14,27 +14,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
-
       - name: Build Daemon
-        run: |
-          xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release build
+        run: xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release build
 
       - name: Build Installer
-        run: |
-          xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release build
+        run: xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release build
 
       - name: Upload Daemon binary
         uses: actions/upload-artifact@v4
         with:
           name: Daemon
-          path: |
-            ./Build/Products/Release/Daemon
+          path: '**/Daemon'  # путь до бинаря, поправь если надо
 
       - name: Upload Installer binary
         uses: actions/upload-artifact@v4
         with:
           name: Installer
-          path: |
-            ./Build/Products/Release/RansomWhere_Installer.app
+          path: '**/RansomWhere_Installer.app'  # путь до .app, поправь если надо
