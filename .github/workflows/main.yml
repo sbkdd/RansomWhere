@@ -13,16 +13,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Ensure Daemon binary exists
+      - name: Copy Daemon binary to Installer
+        run: cp Daemon/Daemon Installer/Daemon
+
+      - name: Check Daemon binary exists
         run: |
           if [ ! -f Installer/Daemon ]; then
             echo "ERROR: Daemon binary not found in Installer/Daemon"
             exit 1
           fi
           chmod +x Installer/Daemon
-          echo "Daemon binary is ready:"
-          file Installer/Daemon
           ls -lh Installer/Daemon
+          file Installer/Daemon
 
       - name: Build Installer (skip signing)
         run: |
