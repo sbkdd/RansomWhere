@@ -1,22 +1,41 @@
-    - name: Build Installer (skip signing)
-      run: |
-        # Сборка Daemon и Installer
-        xcodebuild -workspace RansomWhere.xcworkspace \
-          -scheme Daemon -configuration Release \
-          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+name: Build Installer (skip signing)
 
-        xcodebuild -workspace RansomWhere.xcworkspace \
-          -scheme Installer -configuration Release \
-          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+on:
+  push:
+    branches: [ main ]
 
-        # Найти бинарник Daemon (НЕ из dSYM)
-        DAEMON_BIN=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon | grep -v dSYM | head -1)
-        echo "Found Daemon binary at $DAEMON_BIN"
+jobs:
+  build:
+    runs-on: macos-latest
 
-        # Копировать бинарь в Installer (если надо — в нужное место для сборки)
-        # Например, если скрипт в build phase Installer, можно так:
-        cp "$DAEMON_BIN" Installer/Daemon
+    steps:
+      - uses: actions/checkout@v3
 
-        # Проверить что файл реально скопирован и исполняемый
-        ls -lh Installer/Daemon
-        file Installer/Daemon
+      - name: Set up Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Build Daemon
+        run: |
+          xcodebuild -workspace RansomWhere.xcworkspace \
+            -scheme Daemon -configuration Release \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+      - name: Build Installer (skip signing)
+        run: |
+          xcodebuild -workspace RansomWhere.xcworkspace \
+            -scheme Installer -configuration Release \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+          # Найти бинарник Daemon (НЕ из dSYM)
+          DAEMON_BIN=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon | grep -v dSYM | head -1)
+          echo "Found Daemon binary at $DAEMON_BIN"
+          cp "$DAEMON_BIN" Installer/Daemon
+
+          ls -lh Installer/Daemon
+          file Installer/Daemon
+
+      - name: Archive Installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: Installer
+          path: Installer/
