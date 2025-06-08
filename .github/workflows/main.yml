@@ -1,14 +1,14 @@
-name: Build Daemon
+name: Build Daemon & Installer
 
 on:
   push:
     branches:
       - main
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repo
@@ -23,24 +23,41 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Find built Daemon binary
-        id: find_daemon
+      - name: Build Installer (skip signing)
         run: |
-          BIN_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print -quit)
-          if [ -z "$BIN_PATH" ]; then
+          xcodebuild -workspace RansomWhere.xcworkspace \
+            -scheme Installer \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Find built binaries and prepare artifacts
+        run: |
+          mkdir -p artifacts
+
+          DAEMON_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print -quit)
+          if [ -z "$DAEMON_PATH" ]; then
             echo "Daemon binary not found!"
             exit 1
           fi
-          echo "Found Daemon at $BIN_PATH"
-          echo "BIN_PATH=$BIN_PATH" >> $GITHUB_ENV
+          cp "$DAEMON_PATH" artifacts/Daemon
 
-      - name: Copy Daemon binary to artifacts folder
-        run: |
-          mkdir -p artifacts
-          cp "$BIN_PATH" artifacts/Daemon
+          INSTALLER_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Installer -print -quit)
+          if [ -z "$INSTALLER_PATH" ]; then
+            echo "Installer binary not found!"
+            exit 1
+          fi
+          cp "$INSTALLER_PATH" artifacts/Installer
 
       - name: Upload Daemon binary artifact
         uses: actions/upload-artifact@v4
         with:
           name: Daemon
           path: artifacts/Daemon
+
+      - name: Upload Installer binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Installer
+          path: artifacts/Installer
