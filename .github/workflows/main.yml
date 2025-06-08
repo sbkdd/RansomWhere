@@ -2,36 +2,27 @@ name: Build Installer (skip signing)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: macos-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Daemon (skip signing)
+      - name: Ensure Daemon binary exists
         run: |
-          xcodebuild -workspace RansomWhere.xcworkspace \
-            -scheme Daemon \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-
-      - name: Find Daemon binary
-        id: find_daemon
-        run: |
-          DAEMON_BIN=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print | grep -v dSYM | head -1)
-          if [ -z "$DAEMON_BIN" ]; then
-            echo "Daemon binary not found!"
+          if [ ! -f Installer/Daemon ]; then
+            echo "ERROR: Daemon binary not found in Installer/Daemon"
             exit 1
           fi
-          echo "Found Daemon at $DAEMON_BIN"
-          mkdir -p Installer
-          cp "$DAEMON_BIN" Installer/Daemon
-          ls -lh Installer/Daemon
+          chmod +x Installer/Daemon
+          echo "Daemon binary is ready:"
           file Installer/Daemon
+          ls -lh Installer/Daemon
 
       - name: Build Installer (skip signing)
         run: |
@@ -40,8 +31,8 @@ jobs:
             -configuration Release \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      - name: Upload Daemon binary
+      - name: Upload Installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Daemon
-          path: Installer/Daemon
+          name: Installer
+          path: Installer/build/Release/
