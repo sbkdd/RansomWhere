@@ -2,14 +2,12 @@ name: Build Daemon & Installer
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -23,6 +21,15 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: Check Daemon binary exists
+        run: |
+          DAEMON_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print -quit)
+          if [ -z "$DAEMON_PATH" ]; then
+            echo "Daemon binary not found!"
+            exit 1
+          fi
+          echo "Daemon found at $DAEMON_PATH"
+
       - name: Build Installer (skip signing)
         run: |
           xcodebuild -workspace RansomWhere.xcworkspace \
@@ -32,31 +39,20 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Find built binaries and prepare artifacts
+      - name: Prepare and upload artifacts
         run: |
           mkdir -p artifacts
-
           DAEMON_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print -quit)
-          if [ -z "$DAEMON_PATH" ]; then
-            echo "Daemon binary not found!"
-            exit 1
-          fi
-          cp "$DAEMON_PATH" artifacts/Daemon
-
           INSTALLER_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Installer -print -quit)
-          if [ -z "$INSTALLER_PATH" ]; then
-            echo "Installer binary not found!"
-            exit 1
-          fi
+          cp "$DAEMON_PATH" artifacts/Daemon
           cp "$INSTALLER_PATH" artifacts/Installer
-
-      - name: Upload Daemon binary artifact
+        # Эта команда может быть actions/upload-artifact@v4 для каждого бинаря:
+      - name: Upload Daemon
         uses: actions/upload-artifact@v4
         with:
           name: Daemon
           path: artifacts/Daemon
-
-      - name: Upload Installer binary artifact
+      - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
           name: Installer
