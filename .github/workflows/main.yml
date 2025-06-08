@@ -8,30 +8,49 @@ jobs:
     runs-on: macos-14
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Install latest Git
-      run: brew install git || true
+      - name: Set up latest Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-    - name: Install Carthage (если нужен)
-      run: brew install carthage || true
+      - name: Show available Xcode schemes
+        run: xcodebuild -list -workspace RansomWhere.xcworkspace
 
-    # Сборка Daemon (обязательно первым!)
-    - name: Build Daemon
-      run: |
-        xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release \
-          CODE_SIGN_IDENTITY= CODE_SIGNING_REQUIRED=NO CODE_SIGN_ENTITLEMENTS= CODE_SIGNING_ALLOWED=NO clean build
+      - name: Build Installer (unsigned)
+        run: |
+          xcodebuild \
+            -workspace RansomWhere.xcworkspace \
+            -scheme Installer \
+            -configuration Release \
+            CODE_SIGN_IDENTITY= \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_ENTITLEMENTS= \
+            CODE_SIGNING_ALLOWED=NO \
+            clean build
 
-    # Сборка Installer
-    - name: Build Installer (без подписи)
-      run: |
-        xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release \
-          CODE_SIGN_IDENTITY= CODE_SIGNING_REQUIRED=NO CODE_SIGN_ENTITLEMENTS= CODE_SIGNING_ALLOWED=NO clean build
+      - name: Upload Installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RansomWhere_Installer
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/RansomWhere-*/Build/Products/Release/RansomWhere_Installer.app
 
-    - name: Upload Installer artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: RansomWhere_Installer
-        path: |
-          ~/Library/Developer/Xcode/DerivedData/RansomWhere-*/Build/Products/Release/RansomWhere_Installer.app
+      # Если нужен Daemon, добавь аналогичный шаг:
+      # - name: Build Daemon (unsigned)
+      #   run: |
+      #     xcodebuild \
+      #       -workspace RansomWhere.xcworkspace \
+      #       -scheme Daemon \
+      #       -configuration Release \
+      #       CODE_SIGN_IDENTITY= \
+      #       CODE_SIGNING_REQUIRED=NO \
+      #       CODE_SIGN_ENTITLEMENTS= \
+      #       CODE_SIGNING_ALLOWED=NO \
+      #       clean build
+      # - name: Upload Daemon artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: RansomWhere_Daemon
+      #     path: |
+      #       ~/Library/Developer/Xcode/DerivedData/RansomWhere-*/Build/Products/Release/Daemon
