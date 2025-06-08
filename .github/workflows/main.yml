@@ -1,53 +1,46 @@
-name: Build RansomWhere
+name: Build Daemon
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    # Сборка Daemon (skip signing)
-    - name: Build Daemon (skip signing)
-      run: |
-        xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+      - name: Build Daemon (skip signing)
+        run: |
+          xcodebuild -workspace RansomWhere.xcworkspace \
+            -scheme Daemon \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
 
-    # Проверяем, где лежит бинарь
-    - name: List Release products
-      run: ls -lR ./Daemon || true
+      - name: Find built Daemon binary
+        id: find_daemon
+        run: |
+          BIN_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print -quit)
+          if [ -z "$BIN_PATH" ]; then
+            echo "Daemon binary not found!"
+            exit 1
+          fi
+          echo "Found Daemon at $BIN_PATH"
+          echo "BIN_PATH=$BIN_PATH" >> $GITHUB_ENV
 
-    - name: Find Daemon binary
-      run: find . -name Daemon -type f || true
+      - name: Copy Daemon binary to artifacts folder
+        run: |
+          mkdir -p artifacts
+          cp "$BIN_PATH" artifacts/Daemon
 
-    # Сборка Installer (skip signing и игнор отсутствия Daemon)
-    - name: Build Installer (skip signing)
-      run: |
-        xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-
-    - name: List Installer products
-      run: ls -lR ./Installer || true
-
-    - name: Find Installer binary
-      run: find . -name Installer -type f || true
-
-    # Загрузка бинарей (пути укажешь после первого успешного ls/find!)
-    - name: Upload Daemon binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: Daemon
-        path: '**/Daemon' # ОБНОВИ после первого успешного ls/find на конкретный путь!
-
-    - name: Upload Installer binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: Installer
-        path: '**/Installer' # ОБНОВИ после первого успешного ls/find на конкретный путь!
+      - name: Upload Daemon binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Daemon
+          path: artifacts/Daemon
