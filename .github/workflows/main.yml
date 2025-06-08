@@ -22,6 +22,15 @@ jobs:
         run: |
           sed -i '' '/cp .*Daemon/d' Installer.xcodeproj/project.pbxproj
 
+      - name: Ensure Daemon binary exists
+        run: |
+          if [ ! -f Installer/Daemon ]; then
+            echo "ERROR: Daemon binary not found in Installer/Daemon"
+            exit 1
+          fi
+          chmod +x Installer/Daemon
+          file Installer/Daemon
+
       - name: Build Installer (skip Daemon)
         run: |
           xcodebuild -project Installer.xcodeproj \
@@ -33,15 +42,16 @@ jobs:
       - name: Find all .app after build
         run: |
           echo "::group::.app search"
-          find $PWD -type d -name "*.app"
+          find /Users/runner/Library/Developer/Xcode/DerivedData/ -type d -name "*.app"
           echo "::endgroup::"
 
       - name: Upload Installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: InstallerBuild
-          path: Installer/build/Release/RansomWhere_Installer.app
+          path: /Users/runner/Library/Developer/Xcode/DerivedData/**/Build/Products/Release/RansomWhere_Installer.app
 
       - name: List build products after build
         run: |
-          ls -lR $PWD/Installer/build
+          ls -lR /Users/runner/Library/Developer/Xcode/DerivedData/
+          
