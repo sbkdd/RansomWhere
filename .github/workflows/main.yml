@@ -1,0 +1,34 @@
+name: Build RansomWhere
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install latest Git
+        run: |
+          brew install git || brew upgrade git
+
+      - name: Install Carthage (если нужен)
+        run: brew install carthage
+
+      - name: List available Xcode schemes
+        run: xcodebuild -list -project RansomWhere.xcodeproj
+
+      - name: Build with Xcode
+        run: |
+          xcodebuild -project RansomWhere.xcodeproj \
+          -scheme RansomWhere \
+          -configuration Release \
+          clean build
+
+      - name: Upload .app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: RansomWhere.app
+          path: build/Release/RansomWhere.app
