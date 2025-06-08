@@ -13,9 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy Daemon binary to Installer
-        run: cp Daemon/Daemon Installer/Daemon
-
+      # Проверяем, что бинарник на месте и исполняемый
       - name: Check Daemon binary exists
         run: |
           if [ ! -f Installer/Daemon ]; then
