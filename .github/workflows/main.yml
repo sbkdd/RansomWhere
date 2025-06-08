@@ -39,27 +39,29 @@ jobs:
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
             | tee xcodebuild.log
 
-      - name: List Installer/build folder (after build)
+      - name: List all build directories
         run: |
-          echo "===== Installer/build (Release) ====="
-          ls -lR $PWD/Installer/build || echo "Installer/build not found"
-          echo "===== build/Release ====="
-          ls -lR $PWD/build/Release || echo "build/Release not found"
-          echo "===== DerivedData (filtered for .app) ====="
-          find $HOME/Library/Developer/Xcode/DerivedData -type d -name "*.app" || echo "No .app in DerivedData"
+          echo "=== Root $PWD ==="
+          ls -alh $PWD
+          echo "=== Installer/build ==="
+          ls -alh $PWD/Installer/build || true
+          echo "=== DerivedData ==="
+          ls -alh ~/Library/Developer/Xcode/DerivedData || true
 
       - name: Find all .app after build
         run: |
           echo "::group::.app search"
           find $PWD -type d -name "*.app"
           echo "::endgroup::"
+          find $PWD -type d -name "*.app" > app_paths.txt || true
+          cat app_paths.txt
 
-      - name: Upload Installer artifact
+      - name: Upload any found .app as artifact
         uses: actions/upload-artifact@v4
         with:
           name: InstallerBuild
           path: |
-            **/RansomWhere_Installer.app
+            **/*.app
 
       - name: Upload xcodebuild.log (debug)
         uses: actions/upload-artifact@v4
