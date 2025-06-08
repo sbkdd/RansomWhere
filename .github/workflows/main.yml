@@ -51,3 +51,7 @@ jobs:
           name: InstallerBuild
           path: |
             **/RansomWhere_Installer.app
+
+      - name: Find all .app after build
+        run: |
+          find $PWD -type d -name "*.app"      
