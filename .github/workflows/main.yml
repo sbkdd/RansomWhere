@@ -1,4 +1,4 @@
-name: Build Installer (skip signing)
+name: Build Installer (use prebuilt Daemon)
 
 on:
   push:
@@ -8,35 +8,37 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check Daemon binary exists
+      # Проверяем, что бинарник уже лежит в Installer/Daemon
+      - name: Ensure Daemon binary exists
         run: |
           if [ ! -f Installer/Daemon ]; then
             echo "ERROR: Daemon binary not found in Installer/Daemon"
             exit 1
           fi
-          chmod +x Installer/Daemon
-          ls -lh Installer/Daemon
-          file Installer/Daemon
+          echo "Daemon binary found."
 
-      - name: Prepare Daemon binary for Xcode build
+      # Копируем бинарь туда, где его ждёт Xcode-инсталлер
+      - name: Place Daemon where Xcode expects it
         run: |
           mkdir -p Build/Products/Release/
           cp Installer/Daemon Build/Products/Release/Daemon
+          echo "Daemon binary copied to Build/Products/Release/Daemon"
 
-      - name: Build Installer (skip signing)
+      # Собираем только Installer (без Daemon)
+      - name: Build Installer only (skip Daemon)
         run: |
           xcodebuild -workspace RansomWhere.xcworkspace \
             -scheme Installer \
             -configuration Release \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO
 
       - name: Upload Installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: Installer
-          path: Installer/build/Release/
+          path: Installer/build/Release/Installer.app
