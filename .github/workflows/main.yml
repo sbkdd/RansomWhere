@@ -1,59 +1,22 @@
-name: Build Daemon & Installer
+    - name: Build Installer (skip signing)
+      run: |
+        # Сборка Daemon и Installer
+        xcodebuild -workspace RansomWhere.xcworkspace \
+          -scheme Daemon -configuration Release \
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+        xcodebuild -workspace RansomWhere.xcworkspace \
+          -scheme Installer -configuration Release \
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-jobs:
-  build:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+        # Найти бинарник Daemon (НЕ из dSYM)
+        DAEMON_BIN=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon | grep -v dSYM | head -1)
+        echo "Found Daemon binary at $DAEMON_BIN"
 
-      - name: Build Daemon (skip signing)
-        run: |
-          xcodebuild -workspace RansomWhere.xcworkspace \
-            -scheme Daemon \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+        # Копировать бинарь в Installer (если надо — в нужное место для сборки)
+        # Например, если скрипт в build phase Installer, можно так:
+        cp "$DAEMON_BIN" Installer/Daemon
 
-      - name: Check Daemon binary exists
-        run: |
-          DAEMON_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print -quit)
-          if [ -z "$DAEMON_PATH" ]; then
-            echo "Daemon binary not found!"
-            exit 1
-          fi
-          echo "Daemon found at $DAEMON_PATH"
-
-      - name: Build Installer (skip signing)
-        run: |
-          xcodebuild -workspace RansomWhere.xcworkspace \
-            -scheme Installer \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-
-      - name: Prepare and upload artifacts
-        run: |
-          mkdir -p artifacts
-          DAEMON_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Daemon -print -quit)
-          INSTALLER_PATH=$(find ~/Library/Developer/Xcode/DerivedData/ -type f -name Installer -print -quit)
-          cp "$DAEMON_PATH" artifacts/Daemon
-          cp "$INSTALLER_PATH" artifacts/Installer
-        # Эта команда может быть actions/upload-artifact@v4 для каждого бинаря:
-      - name: Upload Daemon
-        uses: actions/upload-artifact@v4
-        with:
-          name: Daemon
-          path: artifacts/Daemon
-      - name: Upload Installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: Installer
-          path: artifacts/Installer
+        # Проверить что файл реально скопирован и исполняемый
+        ls -lh Installer/Daemon
+        file Installer/Daemon
