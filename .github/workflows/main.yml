@@ -19,12 +19,13 @@ jobs:
       - name: List available Xcode schemes
         run: xcodebuild -list -workspace RansomWhere.xcworkspace
 
-      - name: Build with Xcode (пример для Installer)
+      - name: Build with Xcode (Installer, без подписи)
         run: |
           xcodebuild -workspace RansomWhere.xcworkspace \
           -scheme Installer \
           -configuration Release \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGN_ENTITLEMENTS="" \
+          CODE_SIGNING_ALLOWED=NO \
           clean build
-
-      # Если нужно, добавь шаг для упаковки .app или .pkg
-      # и публикации в artifacts.
