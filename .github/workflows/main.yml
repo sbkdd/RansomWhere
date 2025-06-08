@@ -8,16 +8,14 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-14 # или macos-latest
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Set up Xcode
-      uses: actions/setup-xcode@v4
-      with:
-        xcode-version: '15.4'
+    - name: Print Xcode version (для дебага)
+      run: xcodebuild -version
 
     - name: Build Daemon (skip signing)
       run: |
@@ -31,10 +29,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Daemon
-        path: '**/Daemon'  # уточни путь если надо
+        path: '**/Daemon'
 
     - name: Upload Installer binary
       uses: actions/upload-artifact@v4
       with:
         name: Installer
-        path: '**/Installer'  # уточни путь если надо
+        path: '**/Installer'
