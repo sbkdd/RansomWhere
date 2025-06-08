@@ -17,7 +17,6 @@ jobs:
       - name: Patch deployment target
         run: |
           sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 10.8;/MACOSX_DEPLOYMENT_TARGET = 10.13;/g' Installer.xcodeproj/project.pbxproj || true
-          sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 10.8;/MACOSX_DEPLOYMENT_TARGET = 10.13;/g' Daemon.xcodeproj/project.pbxproj || true
 
       - name: Disable Daemon copy in Run Script
         run: |
@@ -34,13 +33,17 @@ jobs:
 
       - name: Build Installer (skip Daemon)
         run: |
-          xcodebuild -workspace RansomWhere.xcworkspace \
+          xcodebuild -project Installer.xcodeproj \
             -scheme Installer \
             -configuration Release \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            | tee xcodebuild.log
 
-      - name: List all built .app files
-        run: find . -type d -name "*.app"
+      - name: Find all .app after build
+        run: |
+          echo "::group::.app search"
+          find $PWD -type d -name "*.app"
+          echo "::endgroup::"
 
       - name: Upload Installer artifact
         uses: actions/upload-artifact@v4
@@ -48,4 +51,3 @@ jobs:
           name: InstallerBuild
           path: |
             **/RansomWhere_Installer.app
-            
