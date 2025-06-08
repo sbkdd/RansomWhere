@@ -52,6 +52,6 @@ jobs:
           path: |
             **/RansomWhere_Installer.app
 
-       - name: List build products after build
-         run: |
-          ls -lR $PWD/Installer/build
+      - name: List build products after build
+        run: |
+            ls -lR $PWD/Installer/build
