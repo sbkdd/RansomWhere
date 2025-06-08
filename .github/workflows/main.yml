@@ -2,56 +2,52 @@ name: Build RansomWhere
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Build Daemon (skip signing)
-        run: |
-          xcodebuild \
-            -workspace RansomWhere.xcworkspace \
-            -scheme Daemon \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+    # Сборка Daemon (skip signing)
+    - name: Build Daemon (skip signing)
+      run: |
+        xcodebuild -workspace RansomWhere.xcworkspace -scheme Daemon -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      - name: Find Daemon binary
-        run: |
-          find . -name Daemon -type f || true
+    # Проверяем, где лежит бинарь
+    - name: List Release products
+      run: ls -lR ./Daemon || true
 
-      - name: Build Installer (skip signing)
-        run: |
-          xcodebuild \
-            -workspace RansomWhere.xcworkspace \
-            -scheme Installer \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+    - name: Find Daemon binary
+      run: find . -name Daemon -type f || true
 
-      - name: Find Installer binary
-        run: |
-          find . -name Installer -type f || true
+    # Сборка Installer (skip signing и игнор отсутствия Daemon)
+    - name: Build Installer (skip signing)
+      run: |
+        xcodebuild -workspace RansomWhere.xcworkspace -scheme Installer -configuration Release build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      - name: Upload all Daemon binaries
-        uses: actions/upload-artifact@v4
-        with:
-          name: Daemon
-          path: |
-            **/Daemon
+    - name: List Installer products
+      run: ls -lR ./Installer || true
 
-      - name: Upload all Installer binaries
-        uses: actions/upload-artifact@v4
-        with:
-          name: Installer
-          path: |
-            **/Installer
+    - name: Find Installer binary
+      run: find . -name Installer -type f || true
+
+    # Загрузка бинарей (пути укажешь после первого успешного ls/find!)
+    - name: Upload Daemon binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: Daemon
+        path: '**/Daemon' # ОБНОВИ после первого успешного ls/find на конкретный путь!
+
+    - name: Upload Installer binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: Installer
+        path: '**/Installer' # ОБНОВИ после первого успешного ls/find на конкретный путь!
